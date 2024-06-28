@@ -835,8 +835,21 @@ void SegmentIndexEntry::OptimizeIndex(Txn *txn, const Vector<UniquePtr<InitParam
             }
             break;
         }
+        case IndexType::kHnsw: {
+            const auto [chunk_index_entries, memory_index_entry] = this->GetHnswIndexSnapshot();
+
+            for (const auto &chunk_index_entry : chunk_index_entries) {
+                BufferHandle buffer_handle = chunk_index_entry->GetIndex();
+                //
+            }
+            if (memory_index_entry.get() != nullptr) {
+                BufferHandle buffer_handle = memory_index_entry->GetIndex();
+                //
+            }
+            break;
+        }
         default: {
-            UnrecoverableError("Not implemented");
+            LOG_WARN("Not implemented");
         }
     }
 }
