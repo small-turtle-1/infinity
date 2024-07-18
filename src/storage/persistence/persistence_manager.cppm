@@ -33,6 +33,16 @@ export struct ObjStat {
     int ref_count_{};
 };
 
+struct CurObjStatus {
+    String obj_key_;
+    SizeT obj_size_;
+};
+
+export struct PersistOption {
+    bool allow_compress_ = true;
+    bool persist_to_fixed_;
+};
+
 export class PersistenceManager {
 public:
     // TODO: build cache from existing files under workspace
@@ -40,13 +50,13 @@ public:
     ~PersistenceManager() {}
 
     // Create new object or append to current object, and returns the location.
-    ObjAddr Persist(const String &file_path, bool allow_compose = true);
+    ObjAddr Persist(const String &file_path, const PersistOption &option);
 
     // Create new object or append to current object, and returns the location.
-    ObjAddr Persist(const char *data, SizeT len, bool allow_compose = true);
+    ObjAddr Persist(const char *data, SizeT len, const PersistOption &option);
 
     // Force finalize current object. Subsequent append on the finalized object is forbidden.
-    void CurrentObjFinalize();
+    void CurrentObjFinalize(bool fixed);
 
     // Download the whole object from object store if it's not in cache. Increase refcount and return the cached object file path.
     String GetObjCache(const ObjAddr &object_addr);
@@ -58,22 +68,26 @@ private:
     String ObjCreate();
 
     // Returns the room (size limit - sum_of_parts_size) of current object. User should check before each ObjAppend operation.
-    int CurrentObjRoomNoLock();
+    int CurrentObjRoomNoLock(bool fixed);
 
     // Append file to the current object.
     // It finalize current object if new size exceeds the size limit.
-    void CurrentObjAppendNoLock(const String &file_path, SizeT file_size);
+    void CurrentObjAppendNoLock(CurObjStatus &cur_obj, const String &file_path, SizeT file_size);
 
     // Finalize current object.
-    void CurrentObjFinalizeNoLock();
+    void CurrentObjFinalizeNoLock(CurObjStatus &cur_obj);
 
     String workspace_;
     SizeT object_size_limit_;
 
     std::mutex mtx_;
     HashMap<String, ObjStat> objects_; // obj_key -> ObjStat
-    // Current unsealed object key
-    String current_object_key_;
-    SizeT current_object_size_;
+
+    // Current unsealed object status
+    CurObjStatus fixed_status_;
+    CurObjStatus mutable_status_;
+
+    // String current_object_key_;
+    // SizeT current_object_size_;
 };
 } // namespace infinity

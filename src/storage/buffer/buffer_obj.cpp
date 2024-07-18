@@ -102,7 +102,7 @@ bool BufferObj::Free() {
         }
         case BufferType::kEphemeral: {
             type_ = BufferType::kTemp;
-            file_worker_->WriteToFile(true);
+            file_worker_->WriteToFile(true /*to_spill*/, false /*file_sealed*/);
             buffer_mgr_->AddTemp(this);
             break;
         }
@@ -112,7 +112,7 @@ bool BufferObj::Free() {
     return true;
 }
 
-bool BufferObj::Save() {
+bool BufferObj::Save(bool file_sealed) {
     bool write = false;
     std::unique_lock<std::mutex> locker(w_locker_);
     if (type_ == BufferType::kEphemeral) {

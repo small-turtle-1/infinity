@@ -25,7 +25,7 @@ namespace fs = std::filesystem;
 namespace infinity {
 constexpr SizeT BUFFER_SIZE = 1024 * 1024; // 1 MB
 
-ObjAddr PersistenceManager::Persist(const String &file_path, bool allow_compose) {
+ObjAddr PersistenceManager::Persist(const String &file_path, const PersistOption &option) {
     std::error_code ec;
     fs::path src_fp = file_path;
     SizeT src_size = fs::file_size(src_fp, ec);
@@ -33,7 +33,7 @@ ObjAddr PersistenceManager::Persist(const String &file_path, bool allow_compose)
         String error_message = fmt::format("Failed to get file size of {}.", file_path);
         UnrecoverableError(error_message);
     }
-    if (src_size >= object_size_limit_ || !allow_compose) {
+    if (src_size >= object_size_limit_ || !option.allow_compress_) {
         String obj_key = ObjCreate();
         fs::path dst_fp = workspace_;
         dst_fp.append(obj_key);
@@ -57,9 +57,9 @@ ObjAddr PersistenceManager::Persist(const String &file_path, bool allow_compose)
     }
 }
 
-ObjAddr PersistenceManager::Persist(const char *data, SizeT src_size, bool allow_compose) {
+ObjAddr PersistenceManager::Persist(const char *data, SizeT src_size, const PersistOption &option) {
     fs::path dst_fp = workspace_;
-    if (src_size >= object_size_limit_ || !allow_compose) {
+    if (src_size >= object_size_limit_ || !option.allow_compress_) {
         String obj_key = ObjCreate();
         dst_fp.append(obj_key);
         std::ofstream outFile(dst_fp, std::ios::app);
@@ -100,7 +100,7 @@ ObjAddr PersistenceManager::Persist(const char *data, SizeT src_size, bool allow
 // TODO:
 // - Add a 4-byte pad CRC32 checksum of the whole object to detect Silent Data Corruption.
 // - Upload the finalized object to object store in background.
-void PersistenceManager::CurrentObjFinalize() {
+void PersistenceManager::CurrentObjFinalize(bool fixed) {
     std::lock_guard<std::mutex> lock(mtx_);
     CurrentObjFinalizeNoLock();
 }
@@ -136,9 +136,15 @@ void PersistenceManager::PutObjCache(const ObjAddr &object_addr) {
 
 String PersistenceManager::ObjCreate() { return UUID().to_string(); }
 
-int PersistenceManager::CurrentObjRoomNoLock() { return int(object_size_limit_) - int(current_object_size_); }
+int PersistenceManager::CurrentObjRoomNoLock(bool fixed) {
+    if (fixed) {
+        return int(object_size_limit_) - int(fixed_status_.obj_size_);
+    } else {
+        return int(object_size_limit_) - int(mutable_status_.obj_size_);
+    }
+}
 
-void PersistenceManager::CurrentObjAppendNoLock(const String &file_path, SizeT file_size) {
+void PersistenceManager::CurrentObjAppendNoLock(bool fixed, const String &file_path, SizeT file_size) {
     fs::path src_fp = file_path;
     fs::path dst_fp = workspace_;
     dst_fp.append(current_object_key_);

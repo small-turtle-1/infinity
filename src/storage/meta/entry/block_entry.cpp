@@ -342,14 +342,7 @@ bool BlockEntry::FlushVersionNoLock(TxnTimeStamp checkpoint_ts) {
     }
 
     auto block_version_handle = block_version_->Load();
-    // call GetDataMut to set BufferObj type to BufferType::kEphemeral
     auto *block_version = reinterpret_cast<BlockVersion *>(block_version_handle.GetDataMut());
-    if (block_version->deleted_.size() != this->row_capacity_) {
-        auto err_info = fmt::format("BlockEntry::FlushVersionNoLock: block_version->deleted_.size() {} != this->row_capacity_ {}",
-                                    block_version->deleted_.size(),
-                                    this->row_capacity_);
-        UnrecoverableError(err_info);
-    }
     auto *file_worker_ctx = static_cast<VersionFileWorkerCtx *>(block_version_handle.GetFileWorkerCtxMut());
     file_worker_ctx->checkpoint_ts_ = checkpoint_ts;
     block_version_->Save();

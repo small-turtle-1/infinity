@@ -33,7 +33,7 @@ namespace infinity {
 
 FileWorker::~FileWorker() = default;
 
-void FileWorker::WriteToFile(bool to_spill) {
+void FileWorker::WriteToFile(const FileWorkerOptions *options) {
     if (data_ == nullptr) {
         String error_message = "No data will be written.";
         UnrecoverableError(error_message);

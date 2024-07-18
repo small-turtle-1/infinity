@@ -71,6 +71,7 @@ void VersionFileWorker::WriteToFileImpl(bool to_spill, bool &prepare_success) {
     } else {
         data->SaveToFile(ctx_.checkpoint_ts_, *file_handler_);
     }
+    prepare_success = true;
 }
 
 void VersionFileWorker::ReadFromFileImpl() {

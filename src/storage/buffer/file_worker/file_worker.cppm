@@ -26,6 +26,14 @@ namespace infinity {
 
 export struct FileWorkerCtx {};
 
+export struct FileWorkerOptions {
+    enum struct : i8 {
+        kSave,
+        kSpill,
+        kSealed,
+    } file_type_;
+};
+
 export class FileWorker {
 public:
     // spill_dir_ is not init here
@@ -35,7 +43,7 @@ public:
     virtual ~FileWorker();
 
 public:
-    void WriteToFile(bool to_spill);
+    void WriteToFile(const FileWorkerOptions *options);
 
     void ReadFromFile(bool from_spill);
 
@@ -73,7 +81,7 @@ protected:
     virtual void ReadFromFileImpl() = 0;
 
 private:
-    String ChooseFileDir(bool spill) const { return spill ? fmt::format("{}{}", *temp_dir_, *file_dir_) : *file_dir_; }
+    // String ChooseFileDir(bool spill) const { return spill ? fmt::format("{}{}", *temp_dir_, *file_dir_) : *file_dir_; }
 
 public:
     const SharedPtr<String> file_dir_{};

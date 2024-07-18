@@ -93,7 +93,7 @@ public:
     bool Free();
 
     // called when checkpoint. or in "IMPORT" operator.
-    bool Save();
+    bool Save(bool file_sealed);
 
     void PickForCleanup();
 
