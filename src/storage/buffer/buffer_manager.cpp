@@ -188,7 +188,7 @@ Vector<BufferObjectInfo> BufferManager::GetBufferObjectsInfo() {
             BufferObj *buffer_object_ptr = buffer_pair.second.get();
             buffer_object_info.buffered_status_ = buffer_object_ptr->status();
             buffer_object_info.buffered_type_ = buffer_object_ptr->type();
-            buffer_object_info.file_type_ = buffer_object_ptr->file_worker()->Type();
+            buffer_object_info.file_type_ = buffer_object_ptr->FileType();
             buffer_object_info.object_size_ = buffer_object_ptr->GetBufferSize();
             result.emplace_back(buffer_object_info);
         }

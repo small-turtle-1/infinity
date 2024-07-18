@@ -140,9 +140,7 @@ UniquePtr<BlockColumnEntry> BlockColumnEntry::NewReplayBlockColumnEntry(const Bl
     return column_entry;
 }
 
-ColumnVector BlockColumnEntry::GetColumnVector(BufferManager *buffer_mgr) {
-    return GetColumnVectorInner(buffer_mgr, ColumnVectorTipe::kReadWrite);
-}
+ColumnVector BlockColumnEntry::GetColumnVector(BufferManager *buffer_mgr) { return GetColumnVectorInner(buffer_mgr, ColumnVectorTipe::kReadWrite); }
 
 ColumnVector BlockColumnEntry::GetConstColumnVector(BufferManager *buffer_mgr) {
     return GetColumnVectorInner(buffer_mgr, ColumnVectorTipe::kReadOnly);
@@ -242,9 +240,9 @@ void BlockColumnEntry::Append(const ColumnVector *input_column_vector, u16 input
     column_vector.AppendWith(*input_column_vector, input_column_vector_offset, append_rows);
 }
 
-void BlockColumnEntry::Flush(BlockColumnEntry *block_column_entry, SizeT start_row_count, SizeT checkpoint_row_count) {
+void BlockColumnEntry::Flush(SizeT start_row_count, SizeT checkpoint_row_count) {
     // TODO: Opt, Flush certain row_count content
-    DataType *column_type = block_column_entry->column_type_.get();
+    DataType *column_type = column_type_.get();
     switch (column_type->type()) {
         case kBoolean:
         case kTinyInt:
@@ -270,10 +268,9 @@ void BlockColumnEntry::Flush(BlockColumnEntry *block_column_entry, SizeT start_r
         case kEmbedding:
         case kRowID: {
             //            SizeT buffer_size = row_count * column_type->Size();
-            i64 address = (i64)(block_column_entry->buffer_);
-            LOG_TRACE(fmt::format("Saving {} {}", block_column_entry->column_id(), address));
-            block_column_entry->buffer_->Save();
-            LOG_TRACE(fmt::format("Saved {}", block_column_entry->column_id()));
+            LOG_TRACE(fmt::format("Saving {} {}", column_id_, (i64)(buffer_)));
+            buffer_->Save();
+            LOG_TRACE(fmt::format("Saved {}", column_id_));
 
             break;
         }
@@ -282,17 +279,17 @@ void BlockColumnEntry::Flush(BlockColumnEntry *block_column_entry, SizeT start_r
         case kTensorArray:
         case kVarchar: {
             //            SizeT buffer_size = row_count * column_type->Size();
-            LOG_TRACE(fmt::format("Saving column {}", block_column_entry->column_id()));
-            block_column_entry->buffer_->Save();
-            LOG_TRACE(fmt::format("Saved column {}", block_column_entry->column_id()));
+            LOG_TRACE(fmt::format("Saving column {}", column_id_));
+            buffer_->Save();
+            LOG_TRACE(fmt::format("Saved column {}", column_id_));
 
-            std::shared_lock lock(block_column_entry->mutex_);
-            for (auto *outline_buffer : block_column_entry->outline_buffers_group_0_) {
+            std::shared_lock lock(mutex_);
+            for (auto *outline_buffer : outline_buffers_group_0_) {
                 if (outline_buffer != nullptr) {
                     outline_buffer->Save();
                 }
             }
-            for (auto *outline_buffer : block_column_entry->outline_buffers_group_1_) {
+            for (auto *outline_buffer : outline_buffers_group_1_) {
                 if (outline_buffer != nullptr) {
                     outline_buffer->Save();
                 }

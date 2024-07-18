@@ -26,6 +26,10 @@ import sparse_info;
 
 namespace infinity {
 
+export struct BMPIndexFileWorkerCtx : public FileWorkerCtx {
+    SizeT index_size_;
+};
+
 export class BMPIndexFileWorker final : public IndexFileWorker {
 public:
     explicit BMPIndexFileWorker(SharedPtr<String> file_dir,
@@ -43,9 +47,9 @@ public:
 
     FileWorkerType Type() const override { return FileWorkerType::kBMPIndexFile; }
 
-    SizeT GetMemoryCost() const override { return index_size_; }
+    SizeT GetMemoryCost() const override { return ctx_.index_size_; }
 
-    void SetMemoryCost(SizeT index_size) { index_size_ = index_size; }
+    FileWorkerCtx *GetCtx() override { return &ctx_; }
 
 protected:
     void WriteToFileImpl(bool to_spill, bool &prepare_success) override;
@@ -53,7 +57,7 @@ protected:
     void ReadFromFileImpl() override;
 
 private:
-    SizeT index_size_{};
+    BMPIndexFileWorkerCtx ctx_{};
 };
 
 } // namespace infinity

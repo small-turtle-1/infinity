@@ -105,11 +105,11 @@ public:
 
     String GetFilename() const { return file_worker_->GetFilePath(); }
 
-    const FileWorker *file_worker() const { return file_worker_.get(); }
-
-    FileWorker *file_worker() { return file_worker_.get(); }
+    FileWorkerType FileType() const { return file_worker_->Type(); }
 
 private:
+    FileWorkerCtx *GetFileWorkerCtx() { return file_worker_->GetCtx(); }
+
     // Friend to encapsulate `Unload` interface and to increase `rc_`.
     friend class BufferHandle;
 

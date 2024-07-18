@@ -45,7 +45,7 @@ BMPIndexFileWorker::BMPIndexFileWorker(SharedPtr<String> file_dir,
         }
         index_size = fs.GetFileSize(*file_handler);
     }
-    index_size_ = index_size;
+    ctx_.index_size_ = index_size;
 }
 
 BMPIndexFileWorker::~BMPIndexFileWorker() {
@@ -93,7 +93,7 @@ void BMPIndexFileWorker::WriteToFileImpl(bool to_spill, bool &prepare_success) {
             if constexpr (std::is_same_v<T, std::nullptr_t>) {
                 UnrecoverableError("Invalid index type.");
             } else {
-                index->Save(*file_handler_, index_size_);
+                index->Save(*file_handler_, ctx_.index_size_);
             }
         },
         *bmp_index);

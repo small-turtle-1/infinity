@@ -52,7 +52,7 @@ HnswFileWorker::HnswFileWorker(SharedPtr<String> file_dir,
         }
         index_size = fs.GetFileSize(*file_handler);
     }
-    index_size_ = index_size;
+    ctx_.index_size_ = index_size;
 }
 
 HnswFileWorker::~HnswFileWorker() {

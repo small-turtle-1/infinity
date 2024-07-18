@@ -14,11 +14,26 @@
 
 module;
 
+#include <unistd.h>
+
 import stl;
 
 module file_system;
 
 namespace infinity {
+
+int FileSystem::GetFileSeekType(const FileSeekType &type) {
+    switch (type) {
+        case FileSeekType::kSet:
+            return SEEK_SET;
+        case FileSeekType::kCur:
+            return SEEK_CUR;
+        case FileSeekType::kEnd:
+            return SEEK_END;
+        default:
+            return -1;
+    }
+}
 
 i64 FileHandler::Read(void *data, u64 nbytes) { return file_system_.Read(*this, data, nbytes); }
 

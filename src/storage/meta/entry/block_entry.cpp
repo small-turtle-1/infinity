@@ -329,7 +329,7 @@ void BlockEntry::FlushDataNoLock(SizeT start_row_count, SizeT checkpoint_row_cou
     SizeT column_idx = 0;
     while (column_idx < column_count) {
         BlockColumnEntry *block_column_entry = this->columns_[column_idx].get();
-        BlockColumnEntry::Flush(block_column_entry, start_row_count, checkpoint_row_count);
+        block_column_entry->Flush(start_row_count, checkpoint_row_count);
         LOG_TRACE(fmt::format("ColumnData {} is flushed", block_column_entry->column_id()));
         ++column_idx;
     }
@@ -350,8 +350,8 @@ bool BlockEntry::FlushVersionNoLock(TxnTimeStamp checkpoint_ts) {
                                     this->row_capacity_);
         UnrecoverableError(err_info);
     }
-    auto *version_file_worker = static_cast<VersionFileWorker *>(block_version_->file_worker());
-    version_file_worker->SetCheckpointTS(checkpoint_ts);
+    auto *file_worker_ctx = static_cast<VersionFileWorkerCtx *>(block_version_handle.GetFileWorkerCtxMut());
+    file_worker_ctx->checkpoint_ts_ = checkpoint_ts;
     block_version_->Save();
 
     return true;

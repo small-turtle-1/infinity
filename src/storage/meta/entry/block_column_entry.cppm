@@ -96,7 +96,7 @@ public:
 public:
     void Append(const ColumnVector *input_column_vector, u16 input_offset, SizeT append_rows, BufferManager *buffer_mgr);
 
-    static void Flush(BlockColumnEntry *block_column_entry, SizeT start_row_count, SizeT checkpoint_row_count);
+    void Flush(SizeT start_row_count, SizeT checkpoint_row_count);
 
     void Cleanup();
 

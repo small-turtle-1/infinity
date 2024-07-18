@@ -742,8 +742,8 @@ void SegmentIndexEntry::OptIndex(IndexBase *index_base,
                             UnrecoverableError("Invalid index type.");
                         } else {
                             SizeT index_size = index->GetSizeInBytes();
-                            auto *bmp_file_worker = static_cast<BMPIndexFileWorker *>(buffer_handle.GetFileWorkerMut());
-                            bmp_file_worker->SetMemoryCost(index_size);
+                            auto *file_worker_ctx = static_cast<BMPIndexFileWorkerCtx *>(buffer_handle.GetFileWorkerCtxMut());
+                            file_worker_ctx->index_size_ = index_size;
                         }
                     },
                     *abstract_bmp);

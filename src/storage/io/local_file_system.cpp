@@ -191,9 +191,10 @@ i64 LocalFileSystem::WriteAt(FileHandler &file_handler, i64 file_offset, const v
     return written;
 }
 
-void LocalFileSystem::Seek(FileHandler &file_handler, i64 pos) {
+void LocalFileSystem::Seek(FileHandler &file_handler, i64 pos, FileSeekType seek_type) {
+    int whence = FileSystem::GetFileSeekType(seek_type);
     i32 fd = ((LocalFileHandler &)file_handler).fd_;
-    if ((off_t)-1 == lseek(fd, pos, SEEK_SET)) {
+    if ((off_t)-1 == lseek(fd, pos, whence)) {
         String error_message = fmt::format("Can't seek file: {}: {}", file_handler.path_.string(), strerror(errno));
         UnrecoverableError(error_message);
     }

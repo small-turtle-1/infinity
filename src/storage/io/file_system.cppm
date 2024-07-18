@@ -24,6 +24,12 @@ namespace infinity {
 
 export class FileSystem;
 
+export enum class FileSeekType : u8 {
+    kSet,
+    kCur,
+    kEnd,
+};
+
 export class FileHandler {
 public:
     FileHandler(FileSystem &file_system, String path) : file_system_(file_system), path_(std::move(path)) {}
@@ -36,7 +42,7 @@ public:
 
     i64 Write(const void *data, u64 nbytes);
 
-    void Rename(const String& old_name, const String& new_name);
+    void Rename(const String &old_name, const String &new_name);
 
     void Sync();
 
@@ -49,6 +55,8 @@ public:
 
 class FileSystem {
 public:
+    static int GetFileSeekType(const FileSeekType &type);
+
     explicit FileSystem(FileSystemType file_system_type) : file_system_type_(file_system_type) {}
 
     virtual ~FileSystem() = default;
@@ -66,7 +74,7 @@ public:
 
     virtual void Rename(const String &old_path, const String &new_path) = 0;
 
-    virtual void Seek(FileHandler &file_handler, i64 pos) = 0;
+    virtual void Seek(FileHandler &file_handler, i64 pos, FileSeekType seek_type = FileSeekType::kSet) = 0;
 
     virtual SizeT GetFileSize(FileHandler &file_handler) = 0;
 
@@ -89,9 +97,8 @@ public:
 
     virtual Vector<SharedPtr<DirEntry>> ListDirectory(const String &path) = 0;
 
-    inline FileSystemType file_system_type() const {
-        return file_system_type_;
-    }
+    inline FileSystemType file_system_type() const { return file_system_type_; }
+
 private:
     FileSystemType file_system_type_{FileSystemType::kPosix};
 };

@@ -22,6 +22,10 @@ import file_worker_type;
 
 namespace infinity {
 
+export struct VersionFileWorkerCtx : public FileWorkerCtx {
+    TxnTimeStamp checkpoint_ts_{};
+};
+
 export class VersionFileWorker : public FileWorker {
 public:
     explicit VersionFileWorker(SharedPtr<String> file_dir, SharedPtr<String> file_name, SizeT capacity);
@@ -35,9 +39,9 @@ public:
 
     SizeT GetMemoryCost() const override;
 
-    void SetCheckpointTS(TxnTimeStamp ts) { checkpoint_ts_ = ts; }
-
     FileWorkerType Type() const override { return FileWorkerType::kVersionDataFile; }
+
+    FileWorkerCtx *GetCtx() override { return &ctx_; }
 
 protected:
     void WriteToFileImpl(bool to_spill, bool &prepare_success) override;
@@ -46,7 +50,7 @@ protected:
 
 private:
     SizeT capacity_{};
-    TxnTimeStamp checkpoint_ts_{};
+    VersionFileWorkerCtx ctx_{};
 };
 
 } // namespace infinity

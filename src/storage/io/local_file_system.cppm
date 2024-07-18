@@ -57,7 +57,7 @@ public:
 
     void Rename(const String &old_path, const String &new_path) final;
 
-    void Seek(FileHandler &file_handler, i64 pos) final;
+    void Seek(FileHandler &file_handler, i64 pos, FileSeekType seek_type = FileSeekType::kSet) final;
 
     SizeT GetFileSize(FileHandler &file_handler) final;
 
@@ -88,11 +88,11 @@ public:
 
     String GetAbsolutePath(const String &path);
 
-    static u64 GetFileSizeByPath(const String& path);
+    static u64 GetFileSizeByPath(const String &path);
 
-    static u64 GetFolderSizeByPath(const String& path);
+    static u64 GetFolderSizeByPath(const String &path);
 
-    static String ConcatenateFilePath(const String& dir_path, const String& file_path);
+    static String ConcatenateFilePath(const String &dir_path, const String &file_path);
 
     int MmapFile(const String &file_path, u8 *&data_ptr, SizeT &data_len);
 

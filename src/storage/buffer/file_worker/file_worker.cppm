@@ -24,6 +24,8 @@ import persistence_manager;
 
 namespace infinity {
 
+export struct FileWorkerCtx {};
+
 export class FileWorker {
 public:
     // spill_dir_ is not init here
@@ -62,6 +64,8 @@ public:
     void CleanupFile() const;
 
     void CleanupTempFile() const;
+
+    virtual FileWorkerCtx *GetCtx() { return nullptr; }
 
 protected:
     virtual void WriteToFileImpl(bool to_spill, bool &prepare_success) = 0;

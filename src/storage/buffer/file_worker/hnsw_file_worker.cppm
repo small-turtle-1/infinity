@@ -17,6 +17,7 @@ module;
 export module hnsw_file_worker;
 
 import stl;
+import file_worker;
 import index_file_worker;
 import hnsw_alg;
 import index_hnsw;
@@ -27,6 +28,10 @@ import internal_types;
 import file_worker_type;
 
 namespace infinity {
+
+struct HnswFileWorkerCtx : public FileWorkerCtx {
+    SizeT index_size_;
+};
 
 export struct CreateHnswParam : public CreateIndexParam {
     SizeT chunk_size_{};
@@ -52,9 +57,9 @@ public:
 
     FileWorkerType Type() const override { return FileWorkerType::kHNSWIndexFile; }
 
-    SizeT GetMemoryCost() const override { return index_size_; }
+    SizeT GetMemoryCost() const override { return ctx_.index_size_; }
 
-    void SetMemoryCost(SizeT index_size) { index_size_ = index_size; }
+    FileWorkerCtx *GetCtx() override { return &ctx_; }
 
 protected:
     void WriteToFileImpl(bool to_spill, bool &prepare_success) override;
@@ -62,7 +67,7 @@ protected:
     void ReadFromFileImpl() override;
 
 private:
-    SizeT index_size_{};
+    HnswFileWorkerCtx ctx_{};
 };
 
 } // namespace infinity

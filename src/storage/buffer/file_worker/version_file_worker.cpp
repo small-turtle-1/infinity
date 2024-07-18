@@ -69,7 +69,7 @@ void VersionFileWorker::WriteToFileImpl(bool to_spill, bool &prepare_success) {
     if (to_spill) {
         data->SpillToFile(*file_handler_);
     } else {
-        data->SaveToFile(checkpoint_ts_, *file_handler_);
+        data->SaveToFile(ctx_.checkpoint_ts_, *file_handler_);
     }
 }
 
