@@ -90,7 +90,9 @@ void VectorBuffer::Initialize(SizeT type_size, SizeT capacity) {
     if (data_size > 0) {
         ptr_ = MakeUniqueForOverwrite<char[]>(data_size);
     }
-    if (buffer_type_ == VectorBufferType::kHeap) {
+    if (buffer_type_ == VectorBufferType::kVarBuffer) {
+        var_buffer_mgr_ = MakeUnique<VarBufferManager>();
+    } else if (buffer_type_ == VectorBufferType::kHeap) {
         fix_heap_mgr_ = MakeUnique<FixHeapManager>(0, DEFAULT_FIXLEN_CHUNK_SIZE, true);
     } else if (buffer_type_ == VectorBufferType::kTensorHeap) {
         fix_heap_mgr_ = MakeUnique<FixHeapManager>(0, DEFAULT_FIXLEN_TENSOR_CHUNK_SIZE, false);
@@ -145,7 +147,9 @@ void VectorBuffer::Initialize(BufferManager *buffer_mgr, BlockColumnEntry *block
         UnrecoverableError(error_message);
     }
     ptr_ = buffer_obj->Load();
-    if (buffer_type_ == VectorBufferType::kHeap) {
+    if (buffer_type_ == VectorBufferType::kVarBuffer) {
+        var_buffer_mgr_ = MakeUnique<VarBufferManager>(block_column_entry, buffer_mgr);
+    } else if (buffer_type_ == VectorBufferType::kHeap) {
         fix_heap_mgr_ = MakeUnique<FixHeapManager>(0, buffer_mgr, block_column_entry, DEFAULT_FIXLEN_CHUNK_SIZE, true);
     } else if (buffer_type_ == VectorBufferType::kTensorHeap) {
         fix_heap_mgr_ = MakeUnique<FixHeapManager>(0, buffer_mgr, block_column_entry, DEFAULT_FIXLEN_TENSOR_CHUNK_SIZE, false);
@@ -164,7 +168,9 @@ void VectorBuffer::Initialize(BufferManager *buffer_mgr, BlockColumnEntry *block
 }
 
 void VectorBuffer::ResetToInit() {
-    if (buffer_type_ == VectorBufferType::kHeap) {
+    if (buffer_type_ == VectorBufferType::kVarBuffer) {
+        var_buffer_mgr_ = MakeUnique<VarBufferManager>();
+    } else if (buffer_type_ == VectorBufferType::kHeap) {
         fix_heap_mgr_ = MakeUnique<FixHeapManager>(0, DEFAULT_FIXLEN_CHUNK_SIZE, true);
     } else if (buffer_type_ == VectorBufferType::kTensorHeap) {
         fix_heap_mgr_ = MakeUnique<FixHeapManager>(0, DEFAULT_FIXLEN_TENSOR_CHUNK_SIZE, false);

@@ -21,6 +21,9 @@ module var_buffer;
 import stl;
 import infinity_exception;
 import third_party;
+import block_column_entry;
+import buffer_manager;
+import var_file_worker;
 
 namespace infinity {
 
@@ -30,9 +33,6 @@ SizeT VarBuffer::Append(UniquePtr<char[]> buffer, SizeT size, bool *free_success
     buffer_size_prefix_sum_.push_back(offset + size);
 
     bool free_success = true;
-    if (buffer_obj_ != nullptr) {
-        free_success = buffer_obj_->AddBufferSize(size);
-    }
     if (free_success_p != nullptr) {
         *free_success_p = free_success;
     }
@@ -66,17 +66,88 @@ const char *VarBuffer::Get(SizeT offset, SizeT size) const {
     return buffers_[i].get() + offset_in_buffer;
 }
 
-Pair<SizeT, UniquePtr<char[]>> VarBuffer::Finish() const {
-    SizeT total_size = buffer_size_prefix_sum_.back();
-    UniquePtr<char[]> buffer = MakeUnique<char[]>(total_size);
-    char *ptr = buffer.get();
+void VarBuffer::Write(char *&ptr) const {
     for (SizeT i = 0; i < buffers_.size(); ++i) {
         const auto &buffer = buffers_[i];
         SizeT buffer_size = buffer_size_prefix_sum_[i + 1] - buffer_size_prefix_sum_[i];
         std::memcpy(ptr, buffer.get(), buffer_size);
         ptr += buffer_size;
     }
-    return {total_size, std::move(buffer)};
+}
+
+void VarBuffer::Write(char *&ptr, SizeT offset, SizeT size) const {
+    const char *data = Get(offset, size);
+    std::memcpy(ptr, data, size);
+    ptr += size;
+}
+
+SizeT VarBufferManager::Append(UniquePtr<char[]> data, SizeT size, bool *free_success) {
+    return std::visit(
+        [&](auto &&arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, UniquePtr<VarBuffer>>) {
+                if (arg.get() == nullptr) {
+                    arg = MakeUnique<VarBufferManager>();
+                }
+                return arg->Append(std::move(data), size, free_success);
+            } else if constexpr (std::is_same_v<T, Optional<BufferHandle>>) {
+                if (!arg.has_value()) {
+                    if (auto *block_obj = block_column_entry_->GetOutlineBuffer(0, 0); block_obj == nullptr) {
+                        auto file_worker = MakeUnique<VarFileWorker>(block_column_entry_->base_dir(), block_column_entry_->OutlineFilename(0, 0), 0
+                                                                     /*buffer_size*/);
+                        auto *buffer_obj = buffer_mgr_->AllocateBufferObject(std::move(file_worker));
+                        block_column_entry_->AppendOutlineBuffer(0, buffer_obj);
+                        arg = buffer_obj->Load();
+                    } else {
+                        arg = block_obj->Load();
+                    }
+                }
+                auto *buffer = static_cast<VarBuffer *>(arg->GetDataMut());
+                return buffer->Append(std::move(data), size, free_success);
+            } else {
+                static_assert(false, "unexpected type");
+            }
+        },
+        buffer_);
+    return 0;
+}
+
+SizeT VarBufferManager::Append(const char *data, SizeT size, bool *free_success) {
+    auto buffer = MakeUnique<char[]>(size);
+    std::memcpy(buffer.get(), data, size);
+    return Append(std::move(buffer), size, free_success);
+}
+
+VarBuffer *VarBufferManager::GetInner() {
+    return std::visit(
+        [](auto &&arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, UniquePtr<VarBuffer>>) {
+                return arg.get();
+            } else if constexpr (std::is_same_v<T, Optional<BufferHandle>>) {
+                return static_cast<VarBuffer *>(arg->GetDataMut());
+            } else {
+                static_assert(false, "unexpected type");
+            }
+        },
+        buffer_);
+}
+
+const VarBuffer *VarBufferManager::GetInner() const {
+    const VarBuffer *res = nullptr;
+    std::visit(
+        [&](auto &&arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, UniquePtr<VarBuffer>>) {
+                res = arg.get();
+            } else if constexpr (std::is_same_v<T, Optional<BufferHandle>>) {
+                res = static_cast<const VarBuffer *>(arg->GetData());
+            } else {
+                static_assert(false, "unexpected type");
+            }
+        },
+        buffer_);
+    return res;
 }
 
 } // namespace infinity

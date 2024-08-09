@@ -14,27 +14,26 @@
 
 #pragma once
 
-
-#include "type/number/float16.h"
-#include "type/number/bfloat16.h"
-#include "type/number/huge_int.h"
-#include "type/number/decimal_type.h"
-#include "type/datetime/date_type.h"
-#include "type/datetime/time_type.h"
-#include "type/datetime/datetime_type.h"
-#include "type/datetime/interval_type.h"
-#include "type/geo/point_type.h"
-#include "type/geo/line_type.h"
-#include "type/geo/line_segment_type.h"
-#include "type/geo/box_type.h"
-#include "type/geo/circle_type.h"
 #include "type/complex/embedding_type.h"
-#include "type/complex/tensor_type.h"
+#include "type/complex/row_id.h"
 #include "type/complex/sparse_type.h"
 #include "type/complex/tensor_array_type.h"
-#include "type/complex/row_id.h"
-#include "type/complex/varchar.h"
+#include "type/complex/tensor_type.h"
 #include "type/complex/uuid_type.h"
+#include "type/complex/varchar.h"
+#include "type/datetime/date_type.h"
+#include "type/datetime/datetime_type.h"
+#include "type/datetime/interval_type.h"
+#include "type/datetime/time_type.h"
+#include "type/geo/box_type.h"
+#include "type/geo/circle_type.h"
+#include "type/geo/line_segment_type.h"
+#include "type/geo/line_type.h"
+#include "type/geo/point_type.h"
+#include "type/number/bfloat16.h"
+#include "type/number/decimal_type.h"
+#include "type/number/float16.h"
+#include "type/number/huge_int.h"
 
 #include <vector>
 
@@ -58,7 +57,7 @@ using DoubleT = double;
 using DecimalT = DecimalType;
 
 // std::string
-//using VarcharT = VarcharType;
+// using VarcharT = VarcharType;
 using VarcharT = Varchar;
 
 // Date and Time
@@ -79,14 +78,14 @@ using PointT = PointType;
 using LineT = LineType;
 using LineSegT = LineSegmentType;
 using BoxT = BoxType;
-//using PathT = PathType;
-//using PolygonT = PolygonType;
+// using PathT = PathType;
+// using PolygonT = PolygonType;
 using CircleT = CircleType;
 
 // Other
-//using BitmapT = BitmapType;
+// using BitmapT = BitmapType;
 using UuidT = UuidType;
-//using BlobT = BlobType;
+// using BlobT = BlobType;
 using EmbeddingT = EmbeddingType;
 
 // Heterogeneous
@@ -108,4 +107,4 @@ using Float16T = float16_t;
 // BF16
 using BFloat16T = bfloat16_t;
 
-}
+} // namespace infinity

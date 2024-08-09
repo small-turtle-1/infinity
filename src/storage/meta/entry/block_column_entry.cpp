@@ -140,9 +140,7 @@ UniquePtr<BlockColumnEntry> BlockColumnEntry::NewReplayBlockColumnEntry(const Bl
     return column_entry;
 }
 
-ColumnVector BlockColumnEntry::GetColumnVector(BufferManager *buffer_mgr) {
-    return GetColumnVectorInner(buffer_mgr, ColumnVectorTipe::kReadWrite);
-}
+ColumnVector BlockColumnEntry::GetColumnVector(BufferManager *buffer_mgr) { return GetColumnVectorInner(buffer_mgr, ColumnVectorTipe::kReadWrite); }
 
 ColumnVector BlockColumnEntry::GetConstColumnVector(BufferManager *buffer_mgr) {
     return GetColumnVectorInner(buffer_mgr, ColumnVectorTipe::kReadOnly);
@@ -187,9 +185,9 @@ void BlockColumnEntry::AppendOutlineBuffer(const u32 buffer_group_id, BufferObj 
 BufferObj *BlockColumnEntry::GetOutlineBuffer(const u32 buffer_group_id, const SizeT idx) const {
     std::shared_lock lock(mutex_);
     if (buffer_group_id == 0) {
-        return outline_buffers_group_0_[idx];
+        return outline_buffers_group_0_.empty() ? nullptr : outline_buffers_group_0_[idx];
     } else if (buffer_group_id == 1) {
-        return outline_buffers_group_1_[idx];
+        return outline_buffers_group_1_.empty() ? nullptr : outline_buffers_group_1_[idx];
     } else {
         String error_message = "Invalid buffer group id";
         UnrecoverableError(error_message);

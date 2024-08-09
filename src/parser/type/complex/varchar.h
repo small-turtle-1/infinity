@@ -38,6 +38,11 @@ struct VectorVarchar {
     uint32_t chunk_offset_{0};
 };
 
+struct VectorVarchar1 {
+    char prefix_[VARCHAR_PREFIX_LENGTH]{};
+    uint64_t file_offset_{0};
+};
+
 struct Varchar {
     explicit Varchar(const uint64_t length = 0) : length_(length) { this->short_ = {}; }
 
@@ -58,6 +63,7 @@ struct Varchar {
     union {
         InlineVarchar short_;
         VectorVarchar vector_;
+        VectorVarchar1 vector1_;
     };
 
     // only for unit test
