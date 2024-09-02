@@ -781,6 +781,9 @@ void TableEntry::MemIndexRecover(BufferManager *buffer_manager, TxnTimeStamp ts)
         for (const auto &[segment_id, segment_entry] : segment_map_) {
             auto iter = table_index_entry->index_by_segment().find(segment_id);
             SharedPtr<SegmentIndexEntry> segment_index_entry = nullptr;
+            if (buffer_manager == nullptr) {
+                // UnrecoverableError("buffer mgr is nullptr3");
+            }
             if (iter == table_index_entry->index_by_segment().end()) {
                 segment_index_entry = SegmentIndexEntry::NewReplaySegmentIndexEntry(table_index_entry,
                                                                                this,

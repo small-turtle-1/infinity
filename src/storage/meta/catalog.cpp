@@ -868,6 +868,9 @@ void Catalog::LoadFromEntryDelta(TxnTimeStamp max_commit_ts, BufferManager *buff
                         String error_message = fmt::format("Segment {} is deprecated", segment_id);
                         UnrecoverableError(error_message);
                     }
+                    if (buffer_mgr == nullptr) {
+                        // UnrecoverableError("buffer mgr is nullptr2");
+                    }
                     auto segment_index_entry = SegmentIndexEntry::NewReplaySegmentIndexEntry(table_index_entry,
                                                                                              table_entry,
                                                                                              segment_id,
@@ -1047,15 +1050,15 @@ bool Catalog::SaveDeltaCatalog(TxnTimeStamp last_ckp_ts, TxnTimeStamp &max_commi
                 LOG_TRACE(fmt::format("Flush block entry done"));
                 break;
             }
-            case CatalogDeltaOpType::ADD_SEGMENT_INDEX_ENTRY: {
-                auto add_segment_index_entry_op = static_cast<AddSegmentIndexEntryOp *>(op.get());
-                LOG_TRACE(fmt::format("Flush segment index entry: {}", add_segment_index_entry_op->ToString()));
-                add_segment_index_entry_op->FlushDataToDisk(max_commit_ts);
-                LOG_TRACE(fmt::format("Flush segment index entry done"));
-                break;
-            }
+            // case CatalogDeltaOpType::ADD_SEGMENT_INDEX_ENTRY: {
+            //     auto add_segment_index_entry_op = static_cast<AddSegmentIndexEntryOp *>(op.get());
+            //     LOG_TRACE(fmt::format("Flush segment index entry: {}", add_segment_index_entry_op->ToString()));
+            //     add_segment_index_entry_op->FlushDataToDisk(max_commit_ts);
+            //     LOG_TRACE(fmt::format("Flush segment index entry done"));
+            //     break;
+            // }
             default:
-                LOG_TRACE(fmt::format("Ignore delta op: {}", op->ToString()));
+                // LOG_TRACE(fmt::format("Ignore delta op: {}", op->ToString()));
                 break;
         }
     }

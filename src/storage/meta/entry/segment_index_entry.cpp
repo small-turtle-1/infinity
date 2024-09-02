@@ -358,6 +358,9 @@ void SegmentIndexEntry::MemIndexWaitInflightTasks() {
 SharedPtr<ChunkIndexEntry> SegmentIndexEntry::MemIndexDump(bool spill, SizeT *dump_size) {
     SharedPtr<ChunkIndexEntry> chunk_index_entry = nullptr;
     const IndexBase *index_base = table_index_entry_->index_base();
+    if (buffer_manager_ == nullptr) {
+        // UnrecoverableError("BufferManager is nullptr.B");
+    }
     switch (index_base->index_type_) {
         case IndexType::kHnsw: {
             {
@@ -435,6 +438,7 @@ void SegmentIndexEntry::AddWalIndexDump(ChunkIndexEntry *dumped_index_entry, Txn
     const auto &db_name = *table_entry->GetDBName();
     const auto &table_name = *table_entry->GetTableName();
     const auto &index_name = *table_index_entry_->GetIndexName();
+    LOG_INFO(fmt::format("AddWalIndexDump: begin_ts: {}, ", txn->BeginTS()));
     txn->AddWalCmd(MakeShared<WalCmdDumpIndex>(db_name, table_name, index_name, segment_id_, std::move(chunk_infos), std::move(deprecate_chunk_ids)));
 }
 
@@ -917,6 +921,9 @@ ChunkIndexEntry *SegmentIndexEntry::RebuildChunkIndexEntries(TxnTableStore *txn_
     SharedPtr<ColumnDef> column_def = table_index_entry_->column_def();
 
     BufferManager *buffer_mgr = txn->buffer_mgr();
+    if (buffer_mgr == nullptr) {
+        // UnrecoverableError("BufferManager is nullptr.A");
+    }
     Vector<ChunkIndexEntry *> old_chunks;
     Vector<ChunkID> old_ids;
     u32 row_count = 0;

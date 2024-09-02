@@ -804,6 +804,7 @@ void WalCmdOptimize::WriteAdv(char *&buf) const {
 }
 
 void WalCmdDumpIndex::WriteAdv(char *&buf) const {
+    LOG_INFO(fmt::format("Dump index wal written"));
     WriteBufAdv(buf, WalCommandType::DUMP_INDEX);
     WriteBufAdv(buf, this->db_name_);
     WriteBufAdv(buf, this->table_name_);

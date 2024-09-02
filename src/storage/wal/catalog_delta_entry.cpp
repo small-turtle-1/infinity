@@ -161,6 +161,13 @@ CatalogDeltaOperation::CatalogDeltaOperation(CatalogDeltaOpType type, BaseEntry 
         }
         merge_flag_ = MergeFlag::kUpdate;
     }
+    if (type_ == CatalogDeltaOpType::ADD_SEGMENT_INDEX_ENTRY) {
+        LOG_INFO(fmt::format("Create add segment index entry op: {}, flag: {}, entry ts: {}, op ts: {}",
+                             *encode_,
+                             int(merge_flag_),
+                             base_entry->commit_ts_,
+                             commit_ts));
+    }
     // LOG_TRACE(fmt::format("Create delta op: {} ", this->ToString()));
 }
 
@@ -938,6 +945,7 @@ void AddSegmentIndexEntryOp::Merge(CatalogDeltaOperation &other) {
         String error_message = fmt::format("Merge failed, other type: {}", other.GetTypeStr());
         UnrecoverableError(error_message);
     }
+    LOG_INFO(fmt::format("Merge add segment index entry op from flag: {} to flag:{}", int(merge_flag_), int(other.merge_flag_)));
     auto &add_segment_index_op = static_cast<AddSegmentIndexEntryOp &>(other);
     MergeFlag flag = this->NextDeleteFlag(add_segment_index_op.merge_flag_);
     *this = std::move(add_segment_index_op);

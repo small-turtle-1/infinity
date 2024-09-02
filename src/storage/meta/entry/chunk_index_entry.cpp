@@ -207,8 +207,13 @@ SharedPtr<ChunkIndexEntry> ChunkIndexEntry::NewBMPIndexChunkIndexEntry(ChunkID c
                                                           index_base,
                                                           column_def,
                                                           index_size);
+        LOG_INFO("HERER1");
         chunk_index_entry->buffer_obj_ = buffer_mgr->AllocateBufferObject(std::move(file_worker));
     }
+    if (chunk_index_entry->buffer_obj_ == nullptr) {
+        UnrecoverableError("Failed to allocate buffer object for BMP index chunk.");
+    }
+    LOG_INFO(fmt::format("ChunkIndexEntry.buffer_obj_: {}", reinterpret_cast<SizeT>(chunk_index_entry->buffer_obj_)));
     return chunk_index_entry;
 }
 
