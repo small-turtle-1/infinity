@@ -24,6 +24,10 @@ import block_column_iter;
 import sparse_util;
 import segment_iter;
 import segment_entry;
+import infinity_exception;
+import infinity_context;
+import third_party;
+import logger;
 
 namespace infinity {
 
@@ -142,6 +146,11 @@ SharedPtr<ChunkIndexEntry> BMPIndexInMem::Dump(SegmentIndexEntry *segment_index_
             }
         },
         bmp_);
+    if (buffer_mgr == nullptr) {
+        LOG_WARN("buffer mgr is nullptr2");
+        buffer_mgr = InfinityContext::instance().storage()->buffer_manager();
+    }
+
     auto new_chunk_index_entry = segment_index_entry->CreateBMPIndexChunkIndexEntry(begin_row_id_, row_count, buffer_mgr, index_size);
 
     BufferHandle handle = new_chunk_index_entry->GetIndex();

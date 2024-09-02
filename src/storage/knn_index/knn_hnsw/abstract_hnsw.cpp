@@ -31,6 +31,8 @@ import logical_type;
 import multivector_util;
 import infinity_exception;
 import third_party;
+import infinity_context;
+import logger;
 
 namespace infinity {
 
@@ -237,6 +239,10 @@ SharedPtr<ChunkIndexEntry> HnswIndexInMem::Dump(SegmentIndexEntry *segment_index
             }
         },
         hnsw_);
+    if (buffer_mgr == nullptr) {
+        LOG_WARN("buffer mgr is nullptr2");
+        buffer_mgr = InfinityContext::instance().storage()->buffer_manager();
+    }
     auto new_chunk_indey_entry = segment_index_entry->CreateHnswIndexChunkIndexEntry(begin_row_id_, row_count, buffer_mgr, index_size);
     if (dump_size_ptr != nullptr) {
         *dump_size_ptr = dump_size;
