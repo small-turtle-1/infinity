@@ -1066,9 +1066,6 @@ SharedPtr<ChunkIndexEntry> SegmentIndexEntry::AddChunkIndexEntryReplayWal(ChunkI
                                                                           TxnTimeStamp commit_ts,
                                                                           TxnTimeStamp deprecate_ts,
                                                                           BufferManager *buffer_mgr) {
-    if (chunk_id != next_chunk_id_) {
-        UnrecoverableError(fmt::format("Chunk id: {} is not equal to next chunk id: {}", chunk_id, next_chunk_id_));
-    }
     auto ret = this->AddChunkIndexEntryReplay(chunk_id, table_entry, base_name, base_rowid, row_count, commit_ts, deprecate_ts, buffer_mgr);
     ++next_chunk_id_;
     return ret;

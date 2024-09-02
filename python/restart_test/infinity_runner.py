@@ -43,11 +43,11 @@ class InfinityRunner:
     @staticmethod
     def connect(uri: str):
         try_n = 100
-        time.sleep(0.5)
+        time.sleep(1)
         for i in range(try_n):
             try:
                 return infinity.connect(uri)
             except Exception as e:
                 print(e)
-                time.sleep(0.5)
+                time.sleep(1)
                 print(f"retry connect {i}")

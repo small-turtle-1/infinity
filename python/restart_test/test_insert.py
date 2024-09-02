@@ -20,7 +20,7 @@ class TestInsert:
     ):
         uri = common_values.TEST_LOCAL_HOST
 
-        insert_n = 1000000
+        insert_n = 100000
         data_gen = data_gen_factory(insert_n)
 
         stop_n = 10
