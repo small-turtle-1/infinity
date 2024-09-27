@@ -32,7 +32,8 @@ class LRUStatMap {
     using LRUMap = HashMap<String, LRUListIter>;
 
 public:
-    // Get stat of object[key], if not in cache, return nullptr
+    // Get stat of object[key]
+    // if not in cache throw error, because obj_stat is synced by checkpoint and should always keeped in memory util invalidate
     // called when read object, add ref count by 1, if ref count 0 -> 1, move from lru_list to using_list
     ObjStat *Get(const String &key);
 
@@ -48,7 +49,7 @@ public:
     void PutNew(const String &key, ObjStat obj_stat);
 
     // Recover old object
-    // the object[key] must in obj_map, and must in cleanuped_list. called when download envicted object from remote storage to local cache
+    // the object[key] must in obj_map, and must in envicted_list. called when download envicted object from remote storage to local cache
     ObjStat *Recover(const String &key);
 
     // Invalidate object[key]
@@ -56,14 +57,14 @@ public:
     Optional<ObjStat> Invalidate(const String &key);
 
     // Envict old object
-    // move the last object in lru_list to cleanuped_list. called when disk used over limit, return nullptr if lru_list is empty
+    // move the last object in lru_list to envicted_list. called when disk used over limit, return nullptr if lru_list is empty
     ObjStat *EnvictLast();
 
 private:
     LRUMap obj_map_{};
     LRUList lru_list_{};
     LRUList using_list_{};
-    LRUList cleanuped_list_{};
+    LRUList envicted_list_{};
 };
 
 // export class
@@ -84,15 +85,15 @@ public:
 
 export class ObjectStatAccessor_LocalStorage : public ObjectStatAccessorBase {
 public:
-    ObjStat *Get(const String &key);
+    ObjStat *Get(const String &key) override;
 
-    ObjStat *GetNoCount(const String &key);
+    ObjStat *GetNoCount(const String &key) override;
 
-    bool Release(const String &key);
+    void Release(const String &key) override;
 
-    void PutNew(const String &key, ObjStat obj_stat);
+    void PutNew(const String &key, ObjStat obj_stat) override;
 
-    Optional<ObjStat> Invalidate(const String &key);
+    Optional<ObjStat> Invalidate(const String &key) override;
 
 private:
     HashMap<String, ObjStat> obj_map_{};
@@ -101,15 +102,15 @@ private:
 // envict and recover is encapsulated
 export class ObjectStatAccessor_ObjectStorage : public ObjectStatAccessorBase {
 public:
-    ObjStat *Get(const String &key);
+    ObjStat *Get(const String &key) override;
 
-    ObjStat *GetNoCount(const String &key);
+    ObjStat *GetNoCount(const String &key) override;
 
-    bool Release(const String &key);
+    bool Release(const String &key) override;
 
-    void PutNew(const String &key, ObjStat obj_stat);
+    void PutNew(const String &key, ObjStat obj_stat) override;
 
-    Optional<ObjStat> Invalidate(const String &key);
+    Optional<ObjStat> Invalidate(const String &key) override;
 
 private:
     LRUStatMap obj_map_{};
