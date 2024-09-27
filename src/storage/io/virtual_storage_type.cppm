@@ -14,16 +14,28 @@
 
 module;
 
-module abstract_file_handle;
+export module virtual_storage_type;
 
-import status;
-import virtual_storage;
+import stl;
 
 namespace infinity {
 
-AbstractFileHandle::AbstractFileHandle(VirtualStorage *storage_system, StorageType storage_type)
-    : storage_system_(storage_system), storage_type_(storage_type) {}
+export enum class StorageType {
+    kInvalid,
+    kLocal,
+    kMinio,
+    kAwsS3,
+    kAzureBlob, // Azure object store
+    kGCS,       // Google cloud storage
+    kOSS,       // Aliyun OSS
+    kCOS,       // Tencent object store
+    kOBS,       // Huawei object store
+    kHDFS,
+    kNFS,
+};
 
-AbstractFileHandle::~AbstractFileHandle() = default;
+export StorageType String2StorageType(const String &storage_type);
+
+export String ToString(StorageType storage_type);
 
 } // namespace infinity

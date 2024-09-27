@@ -14,53 +14,59 @@
 
 module;
 
-export module virtual_storage_system_type;
+#include <string>
+
+module virtual_storage_type ;
 
 import stl;
 
 namespace infinity {
 
-export enum class StorageType {
-    kInvalid,
-    kLocal,
-    kMinio,
-    kAwsS3,
-    kAzureBlob, // Azure object store
-    kGCS,       // Google cloud storage
-    kOSS,       // Aliyun OSS
-    kCOS,       // Tencent object store
-    kOBS,       // Huawei object store
-    kHDFS,
-    kNFS,
-};
-
-export StorageType String2StorageType(const String &storage_type) {
-    if (std::strcmp(storage_type.c_str(), "local")) {
+StorageType String2StorageType(const String &storage_type) {
+    if (storage_type == "local") {
         return StorageType::kLocal;
-    } else if (std::strcmp(storage_type.c_str(), "minio")) {
-        return StorageType::kMinio;
-    } else if (std::strcmp(storage_type.c_str(), "aws_s3")) {
-        return StorageType::kAwsS3;
-    } else if (std::strcmp(storage_type.c_str(), "azure_blob")) {
-        return StorageType::kAzureBlob;
-    } else if (std::strcmp(storage_type.c_str(), "gcs")) {
-        return StorageType::kGCS;
-    } else if (std::strcmp(storage_type.c_str(), "oss")) {
-        return StorageType::kOSS;
-    } else if (std::strcmp(storage_type.c_str(), "cos")) {
-        return StorageType::kCOS;
-    } else if (std::strcmp(storage_type.c_str(), "obs")) {
-        return StorageType::kOBS;
-    } else if (std::strcmp(storage_type.c_str(), "hdfs")) {
-        return StorageType::kHDFS;
-    } else if (std::strcmp(storage_type.c_str(), "nfs")) {
-        return StorageType::kNFS;
-    } else {
-        return StorageType::kInvalid;
     }
+
+    if (storage_type == "minio") {
+        return StorageType::kMinio;
+    }
+
+    if (storage_type == "aws_s3") {
+        return StorageType::kLocal;
+    }
+
+    if (storage_type == "azure_blob") {
+        return StorageType::kLocal;
+    }
+
+    if (storage_type == "gcs") {
+        return StorageType::kLocal;
+    }
+
+    if (storage_type == "oss") {
+        return StorageType::kLocal;
+    }
+
+    if (storage_type == "cos") {
+        return StorageType::kLocal;
+    }
+    if (storage_type == "obs") {
+        return StorageType::kLocal;
+    }
+
+    if (storage_type == "hdfs") {
+        return StorageType::kLocal;
+    }
+
+    if (storage_type == "nfs") {
+        return StorageType::kLocal;
+    }
+
+    return StorageType::kInvalid;
 }
 
-export String ToString(StorageType storage_type) {
+
+String ToString(StorageType storage_type) {
     switch (storage_type) {
         case StorageType::kLocal: {
             return "local";
@@ -97,5 +103,4 @@ export String ToString(StorageType storage_type) {
         }
     }
 }
-
 }
