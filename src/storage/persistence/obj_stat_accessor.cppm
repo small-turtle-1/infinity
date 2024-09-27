@@ -26,20 +26,20 @@ struct LRUListEntry {
     ObjStat obj_stat_{};
 };
 
-class ObjectStatMap {
+class LRUStatMap {
     using LRUList = List<LRUListEntry>;
     using LRUListIter = LRUList::iterator;
     using LRUMap = HashMap<String, LRUListIter>;
 
 public:
     // Get stat of object[key], if not in cache, return nullptr
-    // called when read object from local cache, ref count by 1, if ref count 0 -> 1, move from lru_list to using_list
+    // called when read object, add ref count by 1, if ref count 0 -> 1, move from lru_list to using_list
     ObjStat *Get(const String &key);
 
     // the same with Get, but not increase ref count
     ObjStat *GetNoCount(const String &key);
 
-    // Release object[key], decrease ref count by 1, if ref count 1 -> 0, move from using_list to lru_list
+    // Release object[key], decrease ref count by 1, if ref count 1 -> 0, move from using_list to lru_list and return true
     // called when object file is closed
     bool Release(const String &key);
 
@@ -48,8 +48,8 @@ public:
     void PutNew(const String &key, ObjStat obj_stat);
 
     // Recover old object
-    // the object[key] must in obj_map, and must in cleanuped_list. called when download cleanuped object from remote storage to local cache
-    void Recover(const String &key);
+    // the object[key] must in obj_map, and must in cleanuped_list. called when download envicted object from remote storage to local cache
+    ObjStat *Recover(const String &key);
 
     // Invalidate object[key]
     // called when the object[key] should be cleaned up in remote storage. remove mapping and return the obj_stat if exists
@@ -112,7 +112,7 @@ public:
     Optional<ObjStat> Invalidate(const String &key);
 
 private:
-    ObjectStatMap obj_map_{};
+    LRUStatMap obj_map_{};
 
     const SizeT disk_capacity_limit_{};
     SizeT disk_used_{};
