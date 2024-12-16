@@ -26,6 +26,7 @@ import buffer_manager;
 import var_file_worker;
 import logger;
 import infinity_context;
+import data_obj;
 
 namespace infinity {
 
@@ -101,8 +102,14 @@ SizeT VarBuffer::TotalSize() const {
     return buffer_size_prefix_sum_.back();
 }
 
+VarBufferManager::VarBufferManager(BlockColumnEntry *block_column_entry, BufferManager *buffer_mgr)
+    : type_(BufferType::kBufferObj), buffer_handle_(None), block_column_entry_(block_column_entry), buffer_mgr_(buffer_mgr) {}
+
 SizeT VarBufferManager::Append(UniquePtr<char[]> data, SizeT size, bool *free_success) {
     auto *buffer = GetInnerMut();
+    if (buffer == nullptr) {
+        UnrecoverableError("Var buffer with mmap cannot append data");
+    }
     SizeT offset = buffer->Append(std::move(data), size, free_success);
     if (type_ == BufferType::kBufferObj) {
         block_column_entry_->SetLastChunkOff(buffer->TotalSize());
@@ -110,13 +117,43 @@ SizeT VarBufferManager::Append(UniquePtr<char[]> data, SizeT size, bool *free_su
     return offset;
 }
 
-VarBufferManager::VarBufferManager(BlockColumnEntry *block_column_entry, BufferManager *buffer_mgr)
-    : type_(BufferType::kBufferObj), buffer_handle_(None), block_column_entry_(block_column_entry), buffer_mgr_(buffer_mgr) {}
-
 SizeT VarBufferManager::Append(const char *data, SizeT size, bool *free_success) {
     auto buffer = MakeUnique<char[]>(size);
     std::memcpy(buffer.get(), data, size);
     return Append(std::move(buffer), size, free_success);
+}
+
+const char *VarBufferManager::Get(SizeT offset, SizeT size) {
+    const VarBuffer *var_buffer = GetInner();
+    if (var_buffer == nullptr) {
+        const char *ptr = mmap_obj_->ptr();
+        return ptr + offset;
+    }
+    return var_buffer->Get(offset, size);
+}
+
+SizeT VarBufferManager::Write(char *ptr) { 
+    const VarBuffer *var_buffer = GetInner();
+    if (var_buffer == nullptr) {
+        UnrecoverableError("Var buffer with mmap cannot write data");
+    }
+    return var_buffer->Write(ptr);
+}
+
+SizeT VarBufferManager::Write(char *ptr, SizeT offset, SizeT size) { 
+    const VarBuffer *var_buffer = GetInner();
+    if (var_buffer == nullptr) {
+        UnrecoverableError("Var buffer with mmap cannot write data");
+    }
+    return var_buffer->Write(ptr, offset, size);
+}
+
+SizeT VarBufferManager::TotalSize() { 
+    const VarBuffer *var_buffer = GetInner();
+    if (var_buffer == nullptr) {
+        return mmap_obj_->size();
+    }
+    return var_buffer->TotalSize();
 }
 
 void VarBufferManager::InitBuffer() {
@@ -124,9 +161,9 @@ void VarBufferManager::InitBuffer() {
         if (mem_buffer_.get() == nullptr) {
             mem_buffer_ = MakeUnique<VarBuffer>();
         }
-    } else {
+    } else if (type_ == BufferType::kBufferObj) {
         if (!buffer_handle_.has_value()) {
-            if (auto *block_obj = block_column_entry_->GetOutlineBuffer(0); block_obj == nullptr) {
+            if (Optional<DataObj> data_obj = block_column_entry_->GetOutlineBuffer(0); !data_obj.has_value()) {
                 auto file_worker = MakeUnique<VarFileWorker>(MakeShared<String>(InfinityContext::instance().config()->DataDir()),
                                                              MakeShared<String>(InfinityContext::instance().config()->TempDir()),
                                                              block_column_entry_->block_entry()->block_dir(),
@@ -136,8 +173,11 @@ void VarBufferManager::InitBuffer() {
                 auto *buffer_obj = buffer_mgr_->AllocateBufferObject(std::move(file_worker));
                 block_column_entry_->AppendOutlineBuffer(buffer_obj);
                 buffer_handle_ = buffer_obj->Load();
+            } else if (data_obj->IsBuffer()) {
+                buffer_handle_ = std::get<BufferHandle>(data_obj->Load());
             } else {
-                buffer_handle_ = block_obj->Load();
+                mmap_obj_ = std::get<SharedPtr<MmapObj>>(data_obj->Load());
+                type_ = BufferType::kMmap;
             }
         }
     }
@@ -147,8 +187,10 @@ VarBuffer *VarBufferManager::GetInnerMut() {
     InitBuffer();
     if (type_ == BufferType::kBuffer) {
         return mem_buffer_.get();
-    } else {
+    } else if (type_ == BufferType::kBufferObj) {
         return static_cast<VarBuffer *>(buffer_handle_->GetDataMut());
+    } else {
+        return nullptr;
     }
 }
 
@@ -156,8 +198,10 @@ const VarBuffer *VarBufferManager::GetInner() {
     InitBuffer();
     if (type_ == BufferType::kBuffer) {
         return mem_buffer_.get();
-    } else {
+    } else if (type_ == BufferType::kBufferObj) {
         return static_cast<const VarBuffer *>(buffer_handle_->GetData());
+    } else {
+        return nullptr;
     }
 }
 

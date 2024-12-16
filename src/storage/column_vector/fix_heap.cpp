@@ -140,8 +140,8 @@ VectorHeapChunk &FixHeapManager::ReadChunk(ChunkId chunk_id) {
         String error_message = "No such chunk in heap";
         UnrecoverableError(error_message);
     }
-    auto *outline_buffer = block_column_entry_->GetOutlineBuffer(chunk_id);
-    if (outline_buffer == nullptr) {
+    Optional<DataObj> outline_buffer = block_column_entry_->GetOutlineBuffer(chunk_id);
+    if (!outline_buffer.has_value()) {
         auto filename = block_column_entry_->OutlineFilename(chunk_id);
         auto file_worker = MakeUnique<DataFileWorker>(MakeShared<String>(InfinityContext::instance().config()->DataDir()),
                                                       MakeShared<String>(InfinityContext::instance().config()->TempDir()),
@@ -149,12 +149,13 @@ VectorHeapChunk &FixHeapManager::ReadChunk(ChunkId chunk_id) {
                                                       filename,
                                                       current_chunk_size_,
                                                       buffer_mgr_->persistence_manager());
-        outline_buffer = buffer_mgr_->GetBufferObject(std::move(file_worker));
+        BufferObj *buffer_obj = buffer_mgr_->GetBufferObject(std::move(file_worker));
 
-        if (outline_buffer == nullptr) {
+        if (buffer_obj == nullptr) {
             String error_message = "No such chunk in heap";
             UnrecoverableError(error_message);
         }
+        outline_buffer = buffer_obj;
     }
 
     auto [iter, insert_ok] = chunks_.emplace(chunk_id, VectorHeapChunk(outline_buffer));

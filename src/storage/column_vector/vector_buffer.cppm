@@ -26,6 +26,7 @@ import data_type;
 import sparse_util;
 import sparse_info;
 import internal_types;
+import infinity_exception;
 
 namespace infinity {
 
@@ -75,16 +76,21 @@ public:
     [[nodiscard]] ptr_t GetDataMut() {
         if (std::holds_alternative<UniquePtr<char[]>>(ptr_)) {
             return std::get<UniquePtr<char[]>>(ptr_).get();
-        } else {
+        } else if (std::holds_alternative<BufferHandle>(ptr_)) {
             return static_cast<ptr_t>(std::get<BufferHandle>(ptr_).GetDataMut());
+        } else {
+            UnrecoverableError("Cannot GetDataMut from mmap");
+            return nullptr;
         }
     }
 
     [[nodiscard]] const_ptr_t GetData() const {
         if (std::holds_alternative<UniquePtr<char[]>>(ptr_)) {
             return std::get<UniquePtr<char[]>>(ptr_).get();
-        } else {
+        } else if (std::holds_alternative<BufferHandle>(ptr_)){
             return static_cast<const_ptr_t>(std::get<BufferHandle>(ptr_).GetData());
+        } else {
+            return static_cast<const_ptr_t>(std::get<const char *>(ptr_));
         }
     }
 
@@ -103,7 +109,7 @@ public:
 private:
     bool initialized_{false};
 
-    std::variant<UniquePtr<char[]>, BufferHandle> ptr_;
+    std::variant<UniquePtr<char[]>, BufferHandle, const char *> ptr_;
 
     SizeT data_size_{0};
     SizeT capacity_{0};

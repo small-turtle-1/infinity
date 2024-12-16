@@ -29,6 +29,7 @@ import third_party;
 import serialize;
 import internal_types;
 import logical_type;
+import data_obj;
 
 namespace infinity {
 
@@ -105,16 +106,21 @@ void VectorBuffer::InitializeCompactBit(BufferManager *buffer_mgr, BlockColumnEn
         UnrecoverableError(error_message);
     }
     SizeT data_size = (capacity + 7) / 8;
-    auto *buffer_obj = block_column_entry->buffer();
-    if (buffer_obj == nullptr) {
-        String error_message = "Buffer object is nullptr.";
-        UnrecoverableError(error_message);
-    }
-    if (buffer_obj->GetBufferSize() != data_size) {
+    const DataObj &data_obj = block_column_entry->data();
+    if (data_obj.GetBufferSize() != data_size) {
         String error_message = "Buffer object size is not equal to data size.";
         UnrecoverableError(error_message);
     }
-    ptr_ = buffer_obj->Load();
+    if (data_obj.IsBuffer()) {
+        BufferObj *buffer_obj = data_obj.buffer_obj();
+        if (buffer_obj == nullptr) {
+            String error_message = "Buffer object is nullptr.";
+            UnrecoverableError(error_message);
+        }
+        ptr_ = buffer_obj->Load();
+    } else {
+        ptr_ = data_obj.mmap_obj()->ptr();
+    }
     initialized_ = true;
     data_size_ = data_size;
     capacity_ = capacity;
@@ -126,16 +132,21 @@ void VectorBuffer::Initialize(BufferManager *buffer_mgr, BlockColumnEntry *block
         UnrecoverableError(error_message);
     }
     SizeT data_size = type_size * capacity;
-    auto *buffer_obj = block_column_entry->buffer();
-    if (buffer_obj == nullptr) {
-        String error_message = "Buffer object is nullptr.";
-        UnrecoverableError(error_message);
-    }
-    if (buffer_obj->GetBufferSize() != data_size) {
+    const DataObj &data_obj = block_column_entry->data();
+    if (data_obj.GetBufferSize() != data_size) {
         String error_message = "Buffer object size is not equal to data size.";
         UnrecoverableError(error_message);
     }
-    ptr_ = buffer_obj->Load();
+    if (data_obj.IsBuffer()) {
+        BufferObj *buffer_obj = data_obj.buffer_obj();
+        if (buffer_obj == nullptr) {
+            String error_message = "Buffer object is nullptr.";
+            UnrecoverableError(error_message);
+        }
+        ptr_ = buffer_obj->Load();
+    } else {
+        ptr_ = data_obj.mmap_obj()->ptr();
+    }
     if (buffer_type_ == VectorBufferType::kVarBuffer) {
         var_buffer_mgr_ = MakeUnique<VarBufferManager>(block_column_entry, buffer_mgr);
     }

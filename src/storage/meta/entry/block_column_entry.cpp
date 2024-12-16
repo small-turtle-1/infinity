@@ -68,9 +68,13 @@ BlockColumnEntry::BlockColumnEntry(const BlockColumnEntry &other)
     outline_buffers_ = other.outline_buffers_;
     last_chunk_offset_ = other.last_chunk_offset_;
 
-    buffer_->AddObjRc();
+    if (buffer_.IsBuffer()) {
+        buffer_->AddObjRc();
+    }
     for (auto *outline_buffer : outline_buffers_) {
-        outline_buffer->AddObjRc();
+        if (outline_buffer.IsBuffer()) {
+            outline_buffer->AddObjRc();
+        }
     }
 }
 
@@ -106,8 +110,9 @@ UniquePtr<BlockColumnEntry> BlockColumnEntry::NewBlockColumnEntry(const BlockEnt
                                                   total_data_size,
                                                   buffer_mgr->persistence_manager());
 
-    block_column_entry->buffer_ = buffer_mgr->AllocateBufferObject(std::move(file_worker));
-    block_column_entry->buffer_->AddObjRc();
+    BufferObj *buffer_obj = buffer_mgr->AllocateBufferObject(std::move(file_worker));
+    block_column_entry->buffer_ = buffer_obj
+    buffer_obj->AddObjRc();
     return block_column_entry;
 }
 
@@ -122,20 +127,25 @@ UniquePtr<BlockColumnEntry> BlockColumnEntry::NewReplayBlockColumnEntry(const Bl
     column_entry->column_type_ = block_entry->GetColumnType(column_id);
     column_entry->commit_ts_ = commit_ts;
 
-    DataType *column_type = column_entry->column_type_.get();
-    const LogicalType column_data_logical_type = column_type->type();
-    const SizeT row_capacity = block_entry->row_capacity();
-    const SizeT total_data_size =
-        (column_data_logical_type == LogicalType::kBoolean) ? ((row_capacity + 7) / 8) : (row_capacity * column_type->Size());
-    auto file_worker = MakeUnique<DataFileWorker>(MakeShared<String>(InfinityContext::instance().config()->DataDir()),
-                                                  MakeShared<String>(InfinityContext::instance().config()->TempDir()),
-                                                  block_entry->block_dir(),
-                                                  column_entry->file_name_,
-                                                  total_data_size,
-                                                  buffer_manager->persistence_manager());
+    if (true) {
+        DataType *column_type = column_entry->column_type_.get();
+        const LogicalType column_data_logical_type = column_type->type();
+        const SizeT row_capacity = block_entry->row_capacity();
+        const SizeT total_data_size =
+            (column_data_logical_type == LogicalType::kBoolean) ? ((row_capacity + 7) / 8) : (row_capacity * column_type->Size());
+        auto file_worker = MakeUnique<DataFileWorker>(MakeShared<String>(InfinityContext::instance().config()->DataDir()),
+                                                    MakeShared<String>(InfinityContext::instance().config()->TempDir()),
+                                                    block_entry->block_dir(),
+                                                    column_entry->file_name_,
+                                                    total_data_size,
+                                                    buffer_manager->persistence_manager());
 
-    column_entry->buffer_ = buffer_manager->GetBufferObject(std::move(file_worker), true /*restart*/);
-    column_entry->buffer_->AddObjRc();
+        BufferObj *buffer_obj = buffer_manager->GetBufferObject(std::move(file_worker), true /*restart*/);
+        column_entry->buffer_ = buffer_obj;
+        buffer_obj->AddObjRc();
+    } else {
+
+    }
 
     if (next_outline_idx > 0) {
         SizeT buffer_size = last_chunk_offset;
@@ -152,6 +162,13 @@ UniquePtr<BlockColumnEntry> BlockColumnEntry::NewReplayBlockColumnEntry(const Bl
     column_entry->last_chunk_offset_ = last_chunk_offset;
 
     return column_entry;
+}
+
+BufferObj *BufferObj::buffer() const {
+    if (!buffer_.IsBuffer()) {
+        UnrecoverableError(fmt::format("Failed to get buffer from entry: {}", encode()));
+    }
+    return std::get<BufferObj *>(buffer_.data_);
 }
 
 String BlockColumnEntry::FilePath() const { return Path(*block_entry_->block_dir()) / *file_name_; }
@@ -277,29 +294,44 @@ void BlockColumnEntry::FlushColumn(TxnTimeStamp checkpoint_ts) {
 }
 
 void BlockColumnEntry::DropColumn() {
-    buffer_->SubObjRc();
+    if (buffer_.IsBuffer()) {
+        buffer_->SubObjRc();
+    }
     for (auto *outline_buffer : outline_buffers_) {
-        outline_buffer->SubObjRc();
+        if (outline_buffer.IsBuffer()) {
+            outline_buffer->SubObjRc();
+        }
     }
     deleted_ = true;
 }
 
 void BlockColumnEntry::Cleanup(CleanupInfoTracer *info_tracer, [[maybe_unused]] bool dropped) {
     if (buffer_ != nullptr) {
-        buffer_->PickForCleanup();
-        if (info_tracer != nullptr) {
-            String file_path = buffer_->GetFilename();
-            info_tracer->AddCleanupInfo(std::move(file_path));
+        if (buffer_.IsBuffer()) {
+            BufferObj *buffer_obj = buffer_.buffer();
+            buffer_obj->PickForCleanup();
+            if (info_tracer != nullptr) {
+                String file_path = buffer_obj->GetFilename();
+                info_tracer->AddCleanupInfo(std::move(file_path));
+            }
+        } else if (buffer_.IsMmap()) {
+            SharedPtr<MmapObj> mmap_obj = buffer_.mmap_obj();
+            mmap_obj.reset();
         }
     }
     for (auto &outline_buffer : outline_buffers_) {
         if (outline_buffer != nullptr) {
-            outline_buffer->PickForCleanup();
-            if (info_tracer != nullptr) {
-                String file_path = outline_buffer->GetFilename();
-                info_tracer->AddCleanupInfo(std::move(file_path));
+            if (outline_buffer.IsBuffer()) {
+                BufferObj *buffer_obj = outline_buffer.buffer();
+                buffer_obj->PickForCleanup();
+                if (info_tracer != nullptr) {
+                    String file_path = buffer_obj->GetFilename();
+                    info_tracer->AddCleanupInfo(std::move(file_path));
+                }
+            } else if (outline_buffer.IsMmap()) {
+                SharedPtr<MmapObj> mmap_obj = outline_buffer.mmap_obj();
+                mmap_obj.reset();
             }
-            outline_buffer = nullptr;
         }
     }
 }
@@ -359,7 +391,7 @@ SizeT BlockColumnEntry::GetStorageSize() const {
     {
         std::shared_lock lock(mutex_);
         result += buffer_->GetBufferSize();
-        for (BufferObj *outline_buffer : outline_buffers_) {
+        for (DataObj outline_buffer : outline_buffers_) {
             result += outline_buffer->GetBufferSize();
         }
     }

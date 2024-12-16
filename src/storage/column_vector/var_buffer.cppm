@@ -20,6 +20,7 @@ import stl;
 import buffer_obj;
 import buffer_handle;
 import logger;
+import mmap_obj;
 
 namespace infinity {
 
@@ -71,13 +72,13 @@ public:
 
     SizeT Append(const char *data, SizeT size, bool *free_success = nullptr);
 
-    const char *Get(SizeT offset, SizeT size) { return GetInner()->Get(offset, size); }
+    const char *Get(SizeT offset, SizeT size);
 
-    SizeT Write(char *ptr) { return GetInner()->Write(ptr); }
+    SizeT Write(char *ptr);
 
-    SizeT Write(char *ptr, SizeT offset, SizeT size) { return GetInner()->Write(ptr, offset, size); }
+    SizeT Write(char *ptr, SizeT offset, SizeT size);
 
-    SizeT TotalSize() { return GetInner()->TotalSize(); }
+    SizeT TotalSize();
 
 private:
     void InitBuffer();
@@ -87,9 +88,15 @@ private:
     const VarBuffer *GetInner();
 
 private:
-    enum class BufferType { kBuffer, kBufferObj } type_;
+    enum class BufferType {
+        kInvalid,
+        kBuffer,
+        kBufferObj,
+        kMmap,
+    } type_ = BufferType::kInvalid;
     UniquePtr<VarBuffer> mem_buffer_;
     Optional<BufferHandle> buffer_handle_;
+    SharedPtr<MmapObj> mmap_obj_;
     BlockColumnEntry *block_column_entry_ = nullptr;
     BufferManager *buffer_mgr_ = nullptr;
 };

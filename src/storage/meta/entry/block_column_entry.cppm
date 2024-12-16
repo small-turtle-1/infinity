@@ -29,6 +29,7 @@ import base_entry;
 import column_def;
 import value;
 import cleanup_scanner;
+import data_obj;
 
 namespace infinity {
 
@@ -73,7 +74,8 @@ public:
 public:
     // Getter
     inline const SharedPtr<DataType> &column_type() const { return column_type_; }
-    inline BufferObj *buffer() const { return buffer_; }
+    BufferObj *buffer() const;
+    const DataObj &data() const { return buffer_; }
     inline u64 column_id() const { return column_id_; }
     inline const SharedPtr<String> &filename() const { return file_name_; }
     inline const BlockEntry *block_entry() { return block_entry_; }
@@ -103,9 +105,9 @@ public:
         buffer->AddObjRc();
     }
 
-    BufferObj *GetOutlineBuffer(SizeT idx) const {
+    Optional<DataObj> GetOutlineBuffer(SizeT idx) const {
         std::shared_lock lock(mutex_);
-        return outline_buffers_.empty() ? nullptr : outline_buffers_[idx];
+        return outline_buffers_.empty() ? None : Optional<DataObj>(outline_buffers_[idx]);
     }
 
     SizeT OutlineBufferCount() const {
@@ -135,12 +137,12 @@ private:
     const BlockEntry *block_entry_{nullptr};
     ColumnID column_id_{};
     SharedPtr<DataType> column_type_{};
-    BufferObj *buffer_{};
+    DataObj buffer_{};
 
     SharedPtr<String> file_name_{};
 
     mutable std::shared_mutex mutex_{};
-    Vector<BufferObj *> outline_buffers_;
+    Vector<DataObj> outline_buffers_;
     u64 last_chunk_offset_{};
 };
 
