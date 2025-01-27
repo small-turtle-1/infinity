@@ -23,13 +23,14 @@ import logical_node;
 import base_expression;
 import data_type;
 import internal_types;
+import base_table_ref;
 
 namespace infinity {
 
 export class LogicalUnnest : public LogicalNode {
 public:
-    explicit LogicalUnnest(u64 node_id, Vector<SharedPtr<BaseExpression>> expressions, u64 unnest_idx)
-        : LogicalNode(node_id, LogicalNodeType::kUnnest), expression_list_(std::move(expressions)), unnest_idx_(unnest_idx) {}
+    explicit LogicalUnnest(u64 node_id, SharedPtr<BaseTableRef> base_table_ref, Vector<SharedPtr<BaseExpression>> expressions, u64 unnest_idx)
+        : LogicalNode(node_id, LogicalNodeType::kUnnest), base_table_ref_(base_table_ref), expression_list_(std::move(expressions)), unnest_idx_(unnest_idx) {}
 
     [[nodiscard]] Vector<ColumnBinding> GetColumnBindings() const;
 
@@ -46,6 +47,8 @@ public:
     Vector<SharedPtr<BaseExpression>> &expression_list() { return expression_list_; }
     const Vector<SharedPtr<BaseExpression>> &expression_list() const { return expression_list_; }
     u64 unnest_idx() const { return unnest_idx_; }
+
+    SharedPtr<BaseTableRef> base_table_ref_{};
 
 private:
     Vector<SharedPtr<BaseExpression>> expression_list_{};

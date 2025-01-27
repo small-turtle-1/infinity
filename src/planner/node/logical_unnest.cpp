@@ -29,6 +29,13 @@ namespace infinity {
 
 Vector<ColumnBinding> LogicalUnnest::GetColumnBindings() const {
     Vector<ColumnBinding> result;
+
+    auto &column_ids = base_table_ref_->column_ids_;
+    result.reserve(column_ids.size());
+    for (SizeT col_id : column_ids) {
+        result.emplace_back(base_table_ref_->table_index_, col_id);
+    }
+
     SizeT unnest_count = expression_list_.size();
     for (SizeT i = 0; i < unnest_count; ++i) {
         result.emplace_back(unnest_idx_, i);

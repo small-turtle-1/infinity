@@ -27,6 +27,7 @@ import search_expression;
 import knn_expression;
 import select_statement;
 import highlighter;
+import base_table_ref;
 
 export module bound_select_statement;
 
@@ -68,6 +69,7 @@ public:
                                        const SharedPtr<BindContext> &bind_context);
 
     SharedPtr<LogicalNode> BuildUnnest(SharedPtr<LogicalNode> &root,
+                                       SharedPtr<BaseTableRef> &table_ref,
                                        Vector<SharedPtr<BaseExpression>> &expressions,
                                        QueryContext *query_context,
                                        const SharedPtr<BindContext> &bind_context);

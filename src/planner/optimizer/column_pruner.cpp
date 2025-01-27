@@ -33,6 +33,7 @@ import logical_match;
 import logical_match_scan_base;
 import logical_knn_scan;
 import logical_match_tensor_scan;
+import logical_unnest;
 import base_table_ref;
 import function;
 import column_binding;

@@ -103,7 +103,8 @@ SharedPtr<LogicalNode> BoundSelectStatement::BuildPlan(QueryContext *query_conte
         }
 
         if (!unnest_expressions_.empty()) {
-            SharedPtr<LogicalNode> unnest = BuildUnnest(root, unnest_expressions_, query_context, bind_context);
+            auto base_table_ref = std::static_pointer_cast<BaseTableRef>(table_ref_ptr_);
+            SharedPtr<LogicalNode> unnest = BuildUnnest(root, base_table_ref, unnest_expressions_, query_context, bind_context);
             unnest->set_left_node(root);
             root = unnest;
         }
@@ -623,13 +624,14 @@ SharedPtr<LogicalNode> BoundSelectStatement::BuildFilter(SharedPtr<LogicalNode> 
 }
 
 SharedPtr<LogicalNode> BoundSelectStatement::BuildUnnest(SharedPtr<LogicalNode> &root,
+                                                         SharedPtr<BaseTableRef> &base_table_ref,
                                                          Vector<SharedPtr<BaseExpression>> &expressions,
                                                          QueryContext *query_context,
                                                          const SharedPtr<BindContext> &bind_context) {
     // SharedPtr<LogicalUnnest> unnest
     expressions = {bind_context->unnest_exprs_};
     SizeT unnest_idx = bind_context->unnest_table_index_;
-    auto unnest = MakeShared<LogicalUnnest>(bind_context->GetNewLogicalNodeId(), expressions, unnest_idx);
+    auto unnest = MakeShared<LogicalUnnest>(bind_context->GetNewLogicalNodeId(), base_table_ref, expressions, unnest_idx);
     return unnest;
 }
 
